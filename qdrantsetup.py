@@ -75,59 +75,72 @@ class OptimizedQdrantVectorStore:
             logger.error(f"Failed to get embedding: {e}")
             raise
     
-    def create_optimized_collection(self):
-        """Create collection with optimal settings for Qwen3-0.6B vectors"""
+    def create_optimized_collection(self, force_recreate: bool = False):
+        """Create collection, preserving data unless force_recreate=True"""
         try:
-            # Check if collection exists and delete it to start fresh
-            try:
-                collection_info = self.qdrant.get_collection(self.collection_name)
-                logger.info(f"Collection '{self.collection_name}' exists - deleting for fresh start")
-                self.qdrant.delete_collection(self.collection_name)
-                time.sleep(1)  # Wait for deletion to complete
-            except:
-                pass
+            collection_exists = False
+            should_recreate = False
             
-            # Create collection with optimized configuration
-            self.qdrant.create_collection(
-                collection_name=self.collection_name,
-                vectors_config=VectorParams(
-                    size=self.vector_size,
-                    distance=Distance.COSINE,  # Best for normalized embeddings
-                    hnsw_config=HnswConfigDiff(
-                        m=32,  # Higher for better recall (default: 16)
-                        ef_construct=256,  # Higher for better index quality (default: 100)
-                        full_scan_threshold=20000,  # Switch to exact search for small collections
-                        max_indexing_threads=4,  # Parallel indexing
-                        on_disk=False,  # Keep in memory for speed
-                    )
-                ),
-                optimizers_config=OptimizersConfigDiff(
-                    default_segment_number=2,  # More segments for better performance
-                    max_segment_size=200000,  # Larger segments for efficiency
-                    memmap_threshold=100000,  # Use memory mapping for large datasets
-                    indexing_threshold=50000,  # Start indexing after 50k vectors
-                    flush_interval_sec=30,  # More frequent flushes
-                    max_optimization_threads=2,  # Parallel optimization
-                ),
-                # Optional: Enable scalar quantization to reduce memory usage
-                quantization_config=ScalarQuantization(
-                    scalar=models.ScalarQuantizationConfig(
-                        type=models.ScalarType.INT8,
-                        quantile=0.99,
-                        always_ram=True,  # Keep quantized vectors in RAM
+            try:
+                info = self.qdrant.get_collection(self.collection_name)
+                collection_exists = True
+                
+                logger.info(f"📊 Collection exists: {info.points_count or 0} points")
+                
+                if force_recreate:
+                    logger.warning("⚠️  Force recreate enabled")
+                    should_recreate = True
+                else:
+                    # Check vector size
+                    current_size = None
+                    if hasattr(info.config, 'params') and hasattr(info.config.params, 'vectors'):
+                        vec_cfg = info.config.params.vectors
+                        current_size = getattr(vec_cfg, 'size', None)
+                    
+                    if current_size == self.vector_size:
+                        logger.info("✅ Config correct - preserving data")
+                        return  # Exit early!
+                    else:
+                        logger.warning(f"⚠️  Size mismatch: {current_size} != {self.vector_size}")
+                        should_recreate = True
+                        
+            except Exception as e:
+                if "not found" in str(e).lower():
+                    logger.info("📝 Collection doesn't exist")
+                collection_exists = False
+            
+            if collection_exists and should_recreate:
+                logger.info("🗑️  Deleting collection...")
+                self.qdrant.delete_collection(self.collection_name)
+                time.sleep(2)
+            
+            if not collection_exists or should_recreate:
+                logger.info("🔨 Creating collection...")
+                self.qdrant.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config=VectorParams(
+                        size=self.vector_size,
+                        distance=Distance.COSINE,
+                        hnsw_config=HnswConfigDiff(
+                            m=32, ef_construct=256, full_scan_threshold=20000,
+                            max_indexing_threads=4, on_disk=False,
+                        )
+                    ),
+                    optimizers_config=OptimizersConfigDiff(
+                        default_segment_number=2, max_segment_size=200000,
+                        memmap_threshold=100000, indexing_threshold=50000,
+                        flush_interval_sec=30, max_optimization_threads=2,
+                    ),
+                    quantization_config=ScalarQuantization(
+                        scalar=models.ScalarQuantizationConfig(
+                            type=models.ScalarType.INT8, quantile=0.99, always_ram=True,
+                        )
                     )
                 )
-            )
-            
-            logger.info(f"✅ Created optimized collection: {self.collection_name}")
-            logger.info("🔧 Optimizations enabled:")
-            logger.info("   - HNSW index with m=32, ef_construct=256")
-            logger.info("   - Cosine distance for normalized embeddings")
-            logger.info("   - Memory-optimized configuration")
-            logger.info("   - Scalar quantization (INT8) for memory efficiency")
+                logger.info(f"✅ Created: {self.collection_name}")
             
         except Exception as e:
-            logger.error(f"Failed to create collection: {e}")
+            logger.error(f"Failed: {e}")
             raise
     
     def add_document(

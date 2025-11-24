@@ -69,6 +69,20 @@ tail -f qwen3-api.log
 ./setup.sh
 ```
 
+## Data Persistence
+
+Vector data is preserved across restarts:
+
+- **Automatic Preservation**: Existing Qdrant collections are kept
+- **Smart Recreation**: Only recreates if configuration is wrong
+- **No Data Loss**: Safe to re-run setup.sh
+
+### Force Recreate (Deletes Data)
+
+```bash
+python3 qdrantsetup.py --force-recreate
+```
+
 ## Services
 
 - **Embedding API**: http://localhost:8000 (OpenAI-compatible)
