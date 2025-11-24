@@ -39,7 +39,7 @@ if [ ! -f "qwen3-embedding-0.6b.gguf" ]; then
     
     # Run GGUF optimizer to extract and optimize the model
     echo "� Optimizing GGUF model from Ollama storage..."
-    if python optimize_gguf.py hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:Q8_0 qwen3-embedding; then
+    if python3 optimize_gguf.py hf.co/Qwen/Qwen3-Embedding-0.6B-GGUF:Q8_0 qwen3-embedding; then
         echo "✅ GGUF model optimized successfully"
     else
         echo "❌ Failed to optimize GGUF model"
@@ -72,7 +72,7 @@ fi
 
 # Step 2: Install Python dependencies
 echo "📦 Step 2: Installing Python dependencies..."
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 echo "✅ Dependencies installed"
 
 # Step 3: Setup Qdrant
@@ -116,7 +116,7 @@ done
 
 # Step 4: Start the API in background
 echo "📦 Step 4: Starting OpenAI-compatible API..."
-python qwen3-api.py &
+python3 qwen3-api.py &
 API_PID=$!
 
 # Wait for API to be ready
@@ -136,12 +136,12 @@ done
 
 # Step 5: Setup Qdrant vector store
 echo "📦 Step 5: Setting up Qdrant vector store..."
-python qdrantsetup.py
+python3 qdrantsetup.py
 echo "✅ Qdrant vector store configured"
 
 # Step 6: Run verification tests
 echo "📦 Step 6: Running verification tests..."
-python test_setup.py
+python3 test_qwen_features.py
 
 # Summary
 echo ""
