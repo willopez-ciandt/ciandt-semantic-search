@@ -390,28 +390,47 @@ class OptimizedQdrantVectorStore:
 
 # Example usage and testing for RooCode compatibility
 if __name__ == "__main__":
-    print("🚀 Starting Optimized Qdrant Vector Store Setup for RooCode")
-    print("=" * 60)
+    import argparse
     
-    # Initialize optimized vector store with RooCode compatibility
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--force-recreate", action="store_true")
+    parser.add_argument("--skip-test-data", action="store_true")
+    args = parser.parse_args()
+    
+    if args.force_recreate:
+        print("⚠️  WARNING: Will delete all data!")
+        if input("Continue? (yes/no): ").lower() != "yes":
+            exit(0)
+    
     vs = OptimizedQdrantVectorStore()
     
-    # Test embedding API connectivity first
-    print("\n🔌 Testing embedding API connectivity...")
+    print("🔌 Testing API...")
     try:
-        test_embedding = vs.get_embedding("test connection")
-        print(f"✅ Embedding API connected - Vector size: {len(test_embedding)}")
-        print(f"   Expected size: {vs.vector_size}")
-        if len(test_embedding) != vs.vector_size:
-            print(f"⚠️  Warning: Vector size mismatch!")
+        vs.get_embedding("test")
+        print("✅ API connected")
     except Exception as e:
-        print(f"❌ Embedding API connection failed: {e}")
-        print("   Make sure the Qwen3 API is running on http://localhost:8000")
+        print(f"❌ API failed: {e}")
         exit(1)
     
-    # Create collection with optimizations
-    print(f"\n🗄️  Creating optimized collection: {vs.collection_name}")
-    vs.create_optimized_collection()
+    vs.create_optimized_collection(force_recreate=args.force_recreate)
+    
+    if not args.skip_test_data:
+        stats = vs.get_collection_stats()
+        if stats.get('points_count', 0) == 0:
+            docs = [
+                {"text": "def fib(n): return n if n<=1 else fib(n-1)+fib(n-2)",
+                 "metadata": {"cat": "code"}},
+                {"text": "FastAPI is a Python web framework",
+                 "metadata": {"cat": "docs"}},
+            ]
+            print(f"📚 Adding {len(docs)} test docs...")
+            vs.add_documents_batch(docs)
+        else:
+            print(f"✅ Has {stats.get('points_count')} docs - skipping test data")
+    
+    stats = vs.get_collection_stats()
+    print(f"\n📊 Collection: {stats.get('points_count', 0)} points")
+    print("🎉 Complete!")
     
     # Test with code-related documents (RooCode use cases)
     test_documents = [

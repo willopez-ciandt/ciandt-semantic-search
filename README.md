@@ -89,6 +89,21 @@ python3 qdrantsetup.py --force-recreate
 - **Qdrant Vector DB**: http://localhost:6333
 - **Ollama**: http://localhost:11434
 
+## Advanced Usage
+
+### Qdrant Setup Options
+
+```bash
+# Normal setup (preserves data)
+python3 qdrantsetup.py
+
+# Skip test data
+python3 qdrantsetup.py --skip-test-data
+
+# Force recreate (WARNING: deletes all data)
+python3 qdrantsetup.py --force-recreate
+```
+
 ## Usage Example
 
 ```python

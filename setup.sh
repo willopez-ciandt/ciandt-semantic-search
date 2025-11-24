@@ -212,7 +212,7 @@ done
 
 # Step 5: Setup Qdrant vector store
 echo "📦 Step 5: Setting up Qdrant vector store..."
-python3 qdrantsetup.py
+python3 qdrantsetup.py --skip-test-data
 echo "✅ Qdrant vector store configured"
 
 # Step 6: Run verification tests
