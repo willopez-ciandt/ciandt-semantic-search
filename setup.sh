@@ -173,19 +173,38 @@ done
 
 # Step 4: Start the API in background
 echo "📦 Step 4: Starting OpenAI-compatible API..."
-python3 qwen3-api.py &
-API_PID=$!
 
-# Wait for API to be ready
+stop_api_process
+
+if is_port_in_use $API_PORT; then
+    echo "❌ Port $API_PORT still in use!"
+    exit 1
+fi
+
+nohup python3 qwen3-api.py > "$LOG_FILE" 2>&1 &
+API_PID=$!
+echo $API_PID > "$PID_FILE"
+echo "✅ API started (PID: $API_PID)"
+
 echo "Waiting for API to start..."
 for i in {1..20}; do
-    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
-        echo "✅ API is ready"
+    if ! is_process_running "$API_PID"; then
+        echo "❌ API died!"
+        tail -20 "$LOG_FILE"
+        rm -f "$PID_FILE"
+        exit 1
+    fi
+    
+    if curl -s http://localhost:$API_PORT/health > /dev/null 2>&1; then
+        echo "✅ API ready"
         break
     fi
+    
     if [ $i -eq 20 ]; then
-        echo "❌ API failed to start"
-        kill $API_PID || true
+        echo "❌ Timeout"
+        tail -20 "$LOG_FILE"
+        kill $API_PID 2>/dev/null || true
+        rm -f "$PID_FILE"
         exit 1
     fi
     sleep 2
@@ -219,6 +238,6 @@ echo "   - Qwen3 API: http://localhost:8000"
 echo "   - Qdrant: http://localhost:6333"
 echo "   - Ollama: http://localhost:11434"
 echo ""
-echo "💡 To stop the API: kill $API_PID"
-echo "💡 To stop Qdrant: docker stop qdrant"
-echo "💡 To restart: ./setup.sh"
+echo "💡 Stop API: kill \$(cat $PID_FILE) or pkill -f qwen3-api.py"
+echo "💡 View logs: tail -f $LOG_FILE"
+echo "💡 Restart: ./setup.sh (safe - preserves data)"
