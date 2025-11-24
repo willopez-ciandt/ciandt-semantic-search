@@ -45,6 +45,30 @@ Qdrant API Key: your-super-secret-qdrant-api-key
 Collection Name: qwen3_embedding
 ```
 
+## Restart Safety
+
+The setup script is fully idempotent and can be safely re-run:
+
+- **Process Tracking**: API process tracked via `.qwen3-api.pid`
+- **Automatic Cleanup**: Stops existing processes before starting new ones
+- **Error Recovery**: Cleanup on failure (Ctrl+C safe)
+- **Logging**: API output captured in `qwen3-api.log`
+
+### Service Management
+
+```bash
+# Stop API
+kill $(cat .qwen3-api.pid)
+# or
+pkill -f qwen3-api.py
+
+# View logs
+tail -f qwen3-api.log
+
+# Restart everything (safe)
+./setup.sh
+```
+
 ## Services
 
 - **Embedding API**: http://localhost:8000 (OpenAI-compatible)

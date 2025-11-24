@@ -7,6 +7,63 @@ set -e  # Exit on any error
 
 echo "🚀 Setting up Qwen3 Embedding for RooCode..."
 echo "============================================="
+# ============================================================================
+# PROCESS MANAGEMENT
+# ============================================================================
+
+PID_FILE=".qwen3-api.pid"
+LOG_FILE="qwen3-api.log"
+API_PORT=8000
+
+is_process_running() {
+    local pid=$1
+    [ -n "$pid" ] && ps -p "$pid" > /dev/null 2>&1
+}
+
+is_port_in_use() {
+    lsof -Pi :$1 -sTCP:LISTEN -t >/dev/null 2>&1
+}
+
+stop_api_process() {
+    echo "🔍 Checking for existing API process..."
+    
+    if [ -f "$PID_FILE" ]; then
+        local old_pid=$(cat "$PID_FILE")
+        if is_process_running "$old_pid"; then
+            echo "🛑 Stopping API (PID: $old_pid)..."
+            kill "$old_pid" 2>/dev/null || true
+            for i in {1..10}; do
+                is_process_running "$old_pid" || break
+                sleep 1
+            done
+            is_process_running "$old_pid" && kill -9 "$old_pid" 2>/dev/null || true
+        fi
+        rm -f "$PID_FILE"
+    fi
+    
+    pkill -f "python3.*qwen3-api.py" 2>/dev/null || true
+    sleep 1
+    
+    if is_port_in_use $API_PORT; then
+        local port_pid=$(lsof -ti:$API_PORT 2>/dev/null || true)
+        [ -n "$port_pid" ] && kill -9 $port_pid 2>/dev/null || true
+    fi
+}
+
+cleanup_on_error() {
+    local exit_code=$?
+    echo ""
+    echo "❌ Setup failed (exit: $exit_code)"
+    [ -n "$API_PID" ] && is_process_running "$API_PID" && kill "$API_PID" 2>/dev/null || true
+    rm -f "$PID_FILE"
+    echo "💡 Safe to re-run: ./setup.sh"
+    exit $exit_code
+}
+
+trap cleanup_on_error ERR INT TERM
+
+# ============================================================================
+
 
 # Check if required files exist
 if [ ! -f "requirements.txt" ]; then
