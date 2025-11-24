@@ -1,6 +1,8 @@
 # Semantic Codebase Indexing
 
-A production-ready semantic search system that transforms your codebase into searchable vector embeddings. This system enables AI coding assistants to understand and search your code by meaning rather than just keywords, dramatically improving code discovery and context retrieval.
+A semantic search system that transforms your codebase into searchable vector embeddings. This system enables AI coding assistants to understand and search your code by meaning rather than just keywords, dramatically improving code discovery and context retrieval.
+
+> **Primary Use Case**: This project is particularly designed for setting up [Roo Code's Codebase Indexing](https://docs.roocode.com/features/codebase-indexing) feature, though it works with any AI coding assistant that supports OpenAI-compatible embeddings.
 
 > **Note**: This is a fork of [Modal](https://github.com/OJamals/Modal) by OJamals, maintained for internal use with additional features and updates.
 
@@ -13,14 +15,69 @@ This project creates a complete semantic search infrastructure for your codebase
 3. **OpenAI-Compatible API**: Provides a FastAPI server that mimics OpenAI's embedding API, making it compatible with any tool that supports OpenAI embeddings
 4. **Restart Safety**: Fully idempotent setup that preserves data and prevents process conflicts across restarts
 
-**Use Case**: Perfect for AI coding assistants (RooCode, Cline, Cursor, etc.) that need to search large codebases semantically to provide relevant context for code generation and analysis.
+**Use Case**: Designed specifically for [Roo Code's Codebase Indexing](https://docs.roocode.com/features/codebase-indexing) feature, enabling semantic search across your entire codebase. Also compatible with other AI coding assistants (Cline, Cursor, etc.) that support OpenAI-compatible embeddings.
 
 ## Why This Fork?
 
 - **Restart Safety**: Added robust process management and data preservation (original had data loss issues)
-- **Production Ready**: Improved error handling, logging, and recovery mechanisms
+- **Improved Reliability**: Enhanced error handling, logging, and recovery mechanisms
 - **Active Maintenance**: Ongoing updates and improvements
 - **Model Agnostic**: Works with any embedding model via Ollama, not just Qwen3
+
+## Features
+
+- **Semantic Code Search**: Find code by meaning, not keywords - understands context and intent
+- **OpenAI-Compatible API**: Drop-in replacement for OpenAI embeddings API
+- **Flexible Models**: Works with any embedding model via Ollama (Qwen3, nomic-embed, etc.)
+- **Optimized Storage**: Qdrant with HNSW indexing, scalar quantization, and memory optimization
+- **IDE Integration**: Compatible with RooCode, Cline, Cursor, and any tool supporting OpenAI embeddings
+- **Robust Design**: Restart-safe, data-preserving, with comprehensive error handling
+
+## Prerequisites
+
+Before running the setup script, ensure you have the following dependencies installed:
+
+### 1. Python 3.13
+
+This project is tested with Python 3.13 (should work with 3.14, but 3.13 is the safer choice).
+
+**Installation:**
+- Download from: https://www.python.org/downloads/release/python-3139/
+- Follow the installer instructions for your operating system
+- Verify installation:
+  ```bash
+  python3 --version
+  # Should show: Python 3.13.x
+  ```
+
+### 2. Docker Desktop
+
+Docker is required to run the Qdrant vector database.
+
+**Installation:**
+- Download from: https://docs.docker.com/desktop/setup/install/mac-install/
+- Run the installer
+- When prompted for login after installation, you can skip it
+- Verify installation:
+  ```bash
+  docker --version
+  # Should show: Docker version 24.x.x or higher
+  ```
+
+### 3. Ollama
+
+Ollama is used to run the Qwen3-0.6B embedding model locally.
+
+**Installation:**
+- Download from: https://ollama.com/download/mac
+- Run the installer
+- Verify installation:
+  ```bash
+  ollama --version
+  # Should show: ollama version x.x.x
+  ```
+
+Once all prerequisites are installed, proceed to the Quick Start section below.
 
 ## Quick Start
 
@@ -36,15 +93,6 @@ This single command:
 - Configures the vector store with optimized settings
 
 For detailed setup, see the [original README](README_ORIGINAL.md).
-
-## Features
-
-- **Semantic Code Search**: Find code by meaning, not keywords - understands context and intent
-- **OpenAI-Compatible API**: Drop-in replacement for OpenAI embeddings API
-- **Flexible Models**: Works with any embedding model via Ollama (Qwen3, nomic-embed, etc.)
-- **Optimized Storage**: Qdrant with HNSW indexing, scalar quantization, and memory optimization
-- **IDE Integration**: Compatible with RooCode, Cline, Cursor, and any tool supporting OpenAI embeddings
-- **Production Ready**: Restart-safe, data-preserving, with comprehensive error handling
 
 ## Configuration
 
